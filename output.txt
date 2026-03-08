@@ -1,0 +1,2073 @@
+.gitignore
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editors / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Node (if used later)
+node_modules/
+package-lock.json
+
+# Build / packaging
+*.zip
+*.crx
+*.pem
+
+# Logs
+*.log
+
+
+content.js
+(function () {
+  const POLL_INTERVAL = 500;
+
+  const DEFAULTS = {
+    size: 'medium',
+    opacity: 75,
+    position: 'top-right',
+    visible: true,
+  };
+
+  const SIZE_MAP = {
+    small: { fontSize: '11px', padding: '3px 8px', borderRadius: '10px' },
+    medium: { fontSize: '14px', padding: '4px 12px', borderRadius: '14px' },
+    large: { fontSize: '18px', padding: '6px 16px', borderRadius: '18px' },
+  };
+
+  const POS_MAP = {
+    'top-right': { top: '12px', right: '12px', bottom: 'auto', left: 'auto' },
+    'top-left': { top: '12px', left: '12px', bottom: 'auto', right: 'auto' },
+    'bottom-right': { bottom: '12px', right: '12px', top: 'auto', left: 'auto' },
+    'bottom-left': { bottom: '12px', left: '12px', top: 'auto', right: 'auto' },
+  };
+
+  let settings = { ...DEFAULTS };
+
+  chrome.storage.sync.get({ imgCounterSettings: DEFAULTS }, (data) => {
+    settings = data.imgCounterSettings;
+    processGalleryCarousels();
+  });
+
+  chrome.storage.onChanged.addListener((changes) => {
+    if (changes.imgCounterSettings) {
+      settings = changes.imgCounterSettings.newValue;
+      processGalleryCarousels();
+    }
+  });
+
+  function applyStyle(counter) {
+    const s = SIZE_MAP[settings.size];
+    const p = POS_MAP[settings.position];
+    const bg = `rgba(0,0,0,${settings.opacity / 100})`;
+
+    Object.assign(counter.style, {
+      position: 'absolute',
+      zIndex: '10000',
+      pointerEvents: 'none',
+      fontWeight: '700',
+      color: '#fff',
+      whiteSpace: 'nowrap',
+      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      background: bg,
+      display: settings.visible ? 'block' : 'none',
+      ...s,
+      ...p,
+    });
+  }
+
+  function processGalleryCarousels() {
+    const galleries = document.querySelectorAll('gallery-carousel');
+
+    galleries.forEach((gallery) => {
+      const galleryShadow = gallery.shadowRoot;
+      if (!galleryShadow) return;
+
+      const faceplateCarousel = galleryShadow.querySelector('faceplate-carousel');
+      if (!faceplateCarousel) return;
+
+      const fcShadow = faceplateCarousel.shadowRoot;
+      if (!fcShadow) return;
+
+      const pagination = fcShadow.querySelector('faceplate-pagination-indicator');
+      if (!pagination) return;
+
+      const pages = parseInt(pagination.getAttribute('pages'), 10);
+      const pageIndex = parseInt(pagination.getAttribute('page-index'), 10);
+
+      if (!pages || pages <= 1) return;
+
+      const current = pageIndex + 1;
+
+      let counter = galleryShadow.querySelector('.reddit-img-counter');
+      if (!counter) {
+        counter = document.createElement('div');
+        counter.className = 'reddit-img-counter';
+
+        const container = galleryShadow.querySelector('.relative') || galleryShadow.firstElementChild;
+        if (container) {
+          container.style.position = 'relative';
+          container.appendChild(counter);
+        } else {
+          galleryShadow.appendChild(counter);
+        }
+      }
+
+      counter.textContent = `${current} / ${pages}`;
+      applyStyle(counter);
+    });
+  }
+
+  const observer = new MutationObserver(processGalleryCarousels);
+  observer.observe(document.body, { childList: true, subtree: true });
+
+  setInterval(processGalleryCarousels, POLL_INTERVAL);
+  processGalleryCarousels();
+})();
+
+i18n.js
+const I18N = {
+  en: {
+    title: 'Reddit Image Counter',
+    size: 'Size',
+    sizeSmall: 'Small',
+    sizeMedium: 'Medium',
+    sizeLarge: 'Large',
+    opacity: 'Opacity',
+    position: 'Position',
+    posTopRight: '↗ Top right',
+    posTopLeft: '↖ Top left',
+    posBotRight: '↘ Bottom right',
+    posBotLeft: '↙ Bottom left',
+    visible: 'Counter visible',
+    preview: 'preview',
+  },
+  fr: {
+    title: 'Reddit Image Counter',
+    size: 'Taille',
+    sizeSmall: 'Petit',
+    sizeMedium: 'Moyen',
+    sizeLarge: 'Grand',
+    opacity: 'Opacité',
+    position: 'Emplacement',
+    posTopRight: '↗ Haut droite',
+    posTopLeft: '↖ Haut gauche',
+    posBotRight: '↘ Bas droite',
+    posBotLeft: '↙ Bas gauche',
+    visible: 'Compteur visible',
+    preview: 'aperçu',
+  },
+  es: {
+    title: 'Reddit Image Counter',
+    size: 'Tamaño',
+    sizeSmall: 'Pequeño',
+    sizeMedium: 'Mediano',
+    sizeLarge: 'Grande',
+    opacity: 'Opacidad',
+    position: 'Posición',
+    posTopRight: '↗ Arriba derecha',
+    posTopLeft: '↖ Arriba izquierda',
+    posBotRight: '↘ Abajo derecha',
+    posBotLeft: '↙ Abajo izquierda',
+    visible: 'Contador visible',
+    preview: 'vista previa',
+  },
+  de: {
+    title: 'Reddit Image Counter',
+    size: 'Größe',
+    sizeSmall: 'Klein',
+    sizeMedium: 'Mittel',
+    sizeLarge: 'Groß',
+    opacity: 'Deckkraft',
+    position: 'Position',
+    posTopRight: '↗ Oben rechts',
+    posTopLeft: '↖ Oben links',
+    posBotRight: '↘ Unten rechts',
+    posBotLeft: '↙ Unten links',
+    visible: 'Zähler sichtbar',
+    preview: 'Vorschau',
+  },
+  pt: {
+    title: 'Reddit Image Counter',
+    size: 'Tamanho',
+    sizeSmall: 'Pequeno',
+    sizeMedium: 'Médio',
+    sizeLarge: 'Grande',
+    opacity: 'Opacidade',
+    position: 'Posição',
+    posTopRight: '↗ Superior direita',
+    posTopLeft: '↖ Superior esquerda',
+    posBotRight: '↘ Inferior direita',
+    posBotLeft: '↙ Inferior esquerda',
+    visible: 'Contador visível',
+    preview: 'pré-visualização',
+  },
+  it: {
+    title: 'Reddit Image Counter',
+    size: 'Dimensione',
+    sizeSmall: 'Piccolo',
+    sizeMedium: 'Medio',
+    sizeLarge: 'Grande',
+    opacity: 'Opacità',
+    position: 'Posizione',
+    posTopRight: '↗ Alto destra',
+    posTopLeft: '↖ Alto sinistra',
+    posBotRight: '↘ Basso destra',
+    posBotLeft: '↙ Basso sinistra',
+    visible: 'Contatore visibile',
+    preview: 'anteprima',
+  },
+  nl: {
+    title: 'Reddit Image Counter',
+    size: 'Grootte',
+    sizeSmall: 'Klein',
+    sizeMedium: 'Gemiddeld',
+    sizeLarge: 'Groot',
+    opacity: 'Dekking',
+    position: 'Positie',
+    posTopRight: '↗ Rechtsboven',
+    posTopLeft: '↖ Linksboven',
+    posBotRight: '↘ Rechtsonder',
+    posBotLeft: '↙ Linksonder',
+    visible: 'Teller zichtbaar',
+    preview: 'voorbeeld',
+  },
+  pl: {
+    title: 'Reddit Image Counter',
+    size: 'Rozmiar',
+    sizeSmall: 'Mały',
+    sizeMedium: 'Średni',
+    sizeLarge: 'Duży',
+    opacity: 'Przezroczystość',
+    position: 'Pozycja',
+    posTopRight: '↗ Prawy górny',
+    posTopLeft: '↖ Lewy górny',
+    posBotRight: '↘ Prawy dolny',
+    posBotLeft: '↙ Lewy dolny',
+    visible: 'Licznik widoczny',
+    preview: 'podgląd',
+  },
+  ru: {
+    title: 'Reddit Image Counter',
+    size: 'Размер',
+    sizeSmall: 'Маленький',
+    sizeMedium: 'Средний',
+    sizeLarge: 'Большой',
+    opacity: 'Прозрачность',
+    position: 'Позиция',
+    posTopRight: '↗ Сверху справа',
+    posTopLeft: '↖ Сверху слева',
+    posBotRight: '↘ Снизу справа',
+    posBotLeft: '↙ Снизу слева',
+    visible: 'Счётчик виден',
+    preview: 'предпросмотр',
+  },
+  ja: {
+    title: 'Reddit Image Counter',
+    size: 'サイズ',
+    sizeSmall: '小',
+    sizeMedium: '中',
+    sizeLarge: '大',
+    opacity: '不透明度',
+    position: '位置',
+    posTopRight: '↗ 右上',
+    posTopLeft: '↖ 左上',
+    posBotRight: '↘ 右下',
+    posBotLeft: '↙ 左下',
+    visible: 'カウンター表示',
+    preview: 'プレビュー',
+  },
+  ko: {
+    title: 'Reddit Image Counter',
+    size: '크기',
+    sizeSmall: '작게',
+    sizeMedium: '보통',
+    sizeLarge: '크게',
+    opacity: '불투명도',
+    position: '위치',
+    posTopRight: '↗ 오른쪽 위',
+    posTopLeft: '↖ 왼쪽 위',
+    posBotRight: '↘ 오른쪽 아래',
+    posBotLeft: '↙ 왼쪽 아래',
+    visible: '카운터 표시',
+    preview: '미리보기',
+  },
+  zh: {
+    title: 'Reddit Image Counter',
+    size: '大小',
+    sizeSmall: '小',
+    sizeMedium: '中',
+    sizeLarge: '大',
+    opacity: '不透明度',
+    position: '位置',
+    posTopRight: '↗ 右上',
+    posTopLeft: '↖ 左上',
+    posBotRight: '↘ 右下',
+    posBotLeft: '↙ 左下',
+    visible: '显示计数器',
+    preview: '预览',
+  },
+  ar: {
+    title: 'Reddit Image Counter',
+    size: 'الحجم',
+    sizeSmall: 'صغير',
+    sizeMedium: 'متوسط',
+    sizeLarge: 'كبير',
+    opacity: 'الشفافية',
+    position: 'الموضع',
+    posTopRight: '↗ أعلى اليمين',
+    posTopLeft: '↖ أعلى اليسار',
+    posBotRight: '↘ أسفل اليمين',
+    posBotLeft: '↙ أسفل اليسار',
+    visible: 'العداد مرئي',
+    preview: 'معاينة',
+  },
+  hi: {
+    title: 'Reddit Image Counter',
+    size: 'आकार',
+    sizeSmall: 'छोटा',
+    sizeMedium: 'मध्यम',
+    sizeLarge: 'बड़ा',
+    opacity: 'अपारदर्शिता',
+    position: 'स्थिति',
+    posTopRight: '↗ ऊपर दाएँ',
+    posTopLeft: '↖ ऊपर बाएँ',
+    posBotRight: '↘ नीचे दाएँ',
+    posBotLeft: '↙ नीचे बाएँ',
+    visible: 'काउंटर दिखाएँ',
+    preview: 'पूर्वावलोकन',
+  },
+  tr: {
+    title: 'Reddit Image Counter',
+    size: 'Boyut',
+    sizeSmall: 'Küçük',
+    sizeMedium: 'Orta',
+    sizeLarge: 'Büyük',
+    opacity: 'Opaklık',
+    position: 'Konum',
+    posTopRight: '↗ Sağ üst',
+    posTopLeft: '↖ Sol üst',
+    posBotRight: '↘ Sağ alt',
+    posBotLeft: '↙ Sol alt',
+    visible: 'Sayaç görünür',
+    preview: 'önizleme',
+  },
+  sv: {
+    title: 'Reddit Image Counter',
+    size: 'Storlek',
+    sizeSmall: 'Liten',
+    sizeMedium: 'Medium',
+    sizeLarge: 'Stor',
+    opacity: 'Opacitet',
+    position: 'Position',
+    posTopRight: '↗ Uppe höger',
+    posTopLeft: '↖ Uppe vänster',
+    posBotRight: '↘ Nere höger',
+    posBotLeft: '↙ Nere vänster',
+    visible: 'Räknare synlig',
+    preview: 'förhandsgranskning',
+  },
+  da: {
+    title: 'Reddit Image Counter',
+    size: 'Størrelse',
+    sizeSmall: 'Lille',
+    sizeMedium: 'Medium',
+    sizeLarge: 'Stor',
+    opacity: 'Gennemsigtighed',
+    position: 'Position',
+    posTopRight: '↗ Øverst til højre',
+    posTopLeft: '↖ Øverst til venstre',
+    posBotRight: '↘ Nederst til højre',
+    posBotLeft: '↙ Nederst til venstre',
+    visible: 'Tæller synlig',
+    preview: 'forhåndsvisning',
+  },
+  no: {
+    title: 'Reddit Image Counter',
+    size: 'Størrelse',
+    sizeSmall: 'Liten',
+    sizeMedium: 'Medium',
+    sizeLarge: 'Stor',
+    opacity: 'Gjennomsiktighet',
+    position: 'Posisjon',
+    posTopRight: '↗ Øverst høyre',
+    posTopLeft: '↖ Øverst venstre',
+    posBotRight: '↘ Nederst høyre',
+    posBotLeft: '↙ Nederst venstre',
+    visible: 'Teller synlig',
+    preview: 'forhåndsvisning',
+  },
+  fi: {
+    title: 'Reddit Image Counter',
+    size: 'Koko',
+    sizeSmall: 'Pieni',
+    sizeMedium: 'Keskikokoinen',
+    sizeLarge: 'Suuri',
+    opacity: 'Peittävyys',
+    position: 'Sijainti',
+    posTopRight: '↗ Yläoikea',
+    posTopLeft: '↖ Ylävasen',
+    posBotRight: '↘ Alaoikea',
+    posBotLeft: '↙ Alavasen',
+    visible: 'Laskuri näkyvissä',
+    preview: 'esikatselu',
+  },
+  uk: {
+    title: 'Reddit Image Counter',
+    size: 'Розмір',
+    sizeSmall: 'Малий',
+    sizeMedium: 'Середній',
+    sizeLarge: 'Великий',
+    opacity: 'Прозорість',
+    position: 'Позиція',
+    posTopRight: '↗ Зверху справа',
+    posTopLeft: '↖ Зверху зліва',
+    posBotRight: '↘ Знизу справа',
+    posBotLeft: '↙ Знизу зліва',
+    visible: 'Лічильник видимий',
+    preview: 'попередній перегляд',
+  },
+  cs: {
+    title: 'Reddit Image Counter',
+    size: 'Velikost',
+    sizeSmall: 'Malý',
+    sizeMedium: 'Střední',
+    sizeLarge: 'Velký',
+    opacity: 'Průhlednost',
+    position: 'Pozice',
+    posTopRight: '↗ Vpravo nahoře',
+    posTopLeft: '↖ Vlevo nahoře',
+    posBotRight: '↘ Vpravo dole',
+    posBotLeft: '↙ Vlevo dole',
+    visible: 'Počítadlo viditelné',
+    preview: 'náhled',
+  },
+  ro: {
+    title: 'Reddit Image Counter',
+    size: 'Dimensiune',
+    sizeSmall: 'Mic',
+    sizeMedium: 'Mediu',
+    sizeLarge: 'Mare',
+    opacity: 'Opacitate',
+    position: 'Poziție',
+    posTopRight: '↗ Sus dreapta',
+    posTopLeft: '↖ Sus stânga',
+    posBotRight: '↘ Jos dreapta',
+    posBotLeft: '↙ Jos stânga',
+    visible: 'Contor vizibil',
+    preview: 'previzualizare',
+  },
+  el: {
+    title: 'Reddit Image Counter',
+    size: 'Μέγεθος',
+    sizeSmall: 'Μικρό',
+    sizeMedium: 'Μεσαίο',
+    sizeLarge: 'Μεγάλο',
+    opacity: 'Αδιαφάνεια',
+    position: 'Θέση',
+    posTopRight: '↗ Πάνω δεξιά',
+    posTopLeft: '↖ Πάνω αριστερά',
+    posBotRight: '↘ Κάτω δεξιά',
+    posBotLeft: '↙ Κάτω αριστερά',
+    visible: 'Μετρητής ορατός',
+    preview: 'προεπισκόπηση',
+  },
+  th: {
+    title: 'Reddit Image Counter',
+    size: 'ขนาด',
+    sizeSmall: 'เล็ก',
+    sizeMedium: 'กลาง',
+    sizeLarge: 'ใหญ่',
+    opacity: 'ความทึบ',
+    position: 'ตำแหน่ง',
+    posTopRight: '↗ บนขวา',
+    posTopLeft: '↖ บนซ้าย',
+    posBotRight: '↘ ล่างขวา',
+    posBotLeft: '↙ ล่างซ้าย',
+    visible: 'แสดงตัวนับ',
+    preview: 'ตัวอย่าง',
+  },
+  vi: {
+    title: 'Reddit Image Counter',
+    size: 'Kích thước',
+    sizeSmall: 'Nhỏ',
+    sizeMedium: 'Vừa',
+    sizeLarge: 'Lớn',
+    opacity: 'Độ mờ',
+    position: 'Vị trí',
+    posTopRight: '↗ Trên phải',
+    posTopLeft: '↖ Trên trái',
+    posBotRight: '↘ Dưới phải',
+    posBotLeft: '↙ Dưới trái',
+    visible: 'Hiện bộ đếm',
+    preview: 'xem trước',
+  },
+  id: {
+    title: 'Reddit Image Counter',
+    size: 'Ukuran',
+    sizeSmall: 'Kecil',
+    sizeMedium: 'Sedang',
+    sizeLarge: 'Besar',
+    opacity: 'Opasitas',
+    position: 'Posisi',
+    posTopRight: '↗ Kanan atas',
+    posTopLeft: '↖ Kiri atas',
+    posBotRight: '↘ Kanan bawah',
+    posBotLeft: '↙ Kiri bawah',
+    visible: 'Penghitung terlihat',
+    preview: 'pratinjau',
+  },
+};
+
+LICENSE
+MIT License
+
+Copyright (c) 2026 Gautier M
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+manifest.json
+{
+  "manifest_version": 3,
+  "name": "Reddit Image Counter",
+  "description": "Affiche l'image actuelle sur le total dans les galeries Reddit",
+  "version": "2.0",
+  "permissions": [
+    "storage"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Reddit Image Counter"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.reddit.com/*",
+        "*://new.reddit.com/*",
+        "*://www.reddit.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "style.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
+
+popup.html
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <style>
+     {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      width: 280px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #1a1a1b;
+      color: #d7dadc;
+      padding: 16px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    h2 {
+      font-size: 15px;
+      color: #ff4500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    #lang-btn {
+      background: #272729;
+      border: 1px solid #343536;
+      border-radius: 6px;
+      color: #d7dadc;
+      font-size: 12px;
+      padding: 3px 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: border-color 0.2s;
+    }
+
+    #lang-btn:hover {
+      border-color: #ff4500;
+    }
+
+    .setting {
+      margin-bottom: 14px;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      color: #818384;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    select,
+    input[type="range"] {
+      width: 100%;
+      background: #272729;
+      color: #d7dadc;
+      border: 1px solid #343536;
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 13px;
+      outline: none;
+    }
+
+    select:hover,
+    input[type="range"]:hover {
+      border-color: #ff4500;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      height: 6px;
+      padding: 0;
+      border: none;
+      border-radius: 3px;
+      background: #343536;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #ff4500;
+      cursor: pointer;
+    }
+
+    .range-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .range-value {
+      font-size: 13px;
+      font-weight: 600;
+      min-width: 36px;
+      text-align: right;
+      color: #ff4500;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #272729;
+      border: 1px solid #343536;
+      border-radius: 6px;
+      padding: 8px 10px;
+    }
+
+    .toggle-row span {
+      font-size: 13px;
+    }
+
+    .switch {
+      position: relative;
+      width: 40px;
+      height: 22px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      inset: 0;
+      background: #343536;
+      border-radius: 22px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .slider::before {
+      content: "";
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      left: 3px;
+      bottom: 3px;
+      background: #d7dadc;
+      border-radius: 50%;
+      transition: 0.2s;
+    }
+
+    .switch input:checked+.slider {
+      background: #ff4500;
+    }
+
+    .switch input:checked+.slider::before {
+      transform: translateX(18px);
+    }
+
+    .preview {
+      margin-top: 14px;
+      background: #272729;
+      border-radius: 8px;
+      height: 80px;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid #343536;
+    }
+
+    .preview-badge {
+      position: absolute;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      font-weight: 700;
+      border-radius: 14px;
+      white-space: nowrap;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      transition: all 0.2s;
+    }
+
+    .preview-label {
+      position: absolute;
+      bottom: 4px;
+      right: 6px;
+      font-size: 10px;
+      color: #818384;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="header">
+    <h2 id="title">🖼️ Reddit Image Counter</h2>
+    <select id="lang-select"></select>  
+</div>
+
+  <div class="setting">
+    <label id="label-size">Size</label>
+    <select id="size">
+      <option value="small" id="opt-small">Small</option>
+      <option value="medium" id="opt-medium" selected>Medium</option>
+      <option value="large" id="opt-large">Large</option>
+    </select>
+  </div>
+
+  <div class="setting">
+    <label id="label-opacity">Opacity</label>
+    <div class="range-row">
+      <input type="range" id="opacity" min="10" max="100" value="75" step="5">
+      <span class="range-value" id="opacity-value">75%</span>
+    </div>
+  </div>
+
+  <div class="setting">
+    <label id="label-position">Position</label>
+    <select id="position">
+      <option value="top-right" id="opt-tr" selected>↗ Top right</option>
+      <option value="top-left" id="opt-tl">↖ Top left</option>
+      <option value="bottom-right" id="opt-br">↘ Bottom right</option>
+      <option value="bottom-left" id="opt-bl">↙ Bottom left</option>
+    </select>
+  </div>
+
+  <div class="setting">
+    <div class="toggle-row">
+      <span id="label-visible">Counter visible</span>
+      <label class="switch">
+        <input type="checkbox" id="visible" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+  </div>
+
+  <div class="preview">
+    <div class="preview-badge" id="preview-badge">3 / 10</div>
+    <span class="preview-label" id="preview-label">preview</span>
+  </div>
+
+  <script src="i18n.js"></script>
+  <script src="popup.js"></script>
+</body>
+
+</html>
+
+popup.js
+const DEFAULTS = {
+  size: 'medium',
+  opacity: 75,
+  position: 'top-right',
+  visible: true,
+};
+
+const SIZE_MAP = {
+  small: { fontSize: '11px', padding: '3px 8px', borderRadius: '10px' },
+  medium: { fontSize: '14px', padding: '4px 12px', borderRadius: '14px' },
+  large: { fontSize: '18px', padding: '6px 16px', borderRadius: '18px' },
+};
+
+const POS_MAP = {
+  'top-right': { top: '10px', right: '10px', bottom: 'auto', left: 'auto' },
+  'top-left': { top: '10px', left: '10px', bottom: 'auto', right: 'auto' },
+  'bottom-right': { bottom: '10px', right: '10px', top: 'auto', left: 'auto' },
+  'bottom-left': { bottom: '10px', left: '10px', top: 'auto', right: 'auto' },
+};
+
+const LANG_LABELS = {
+  en: 'English', fr: 'Français', es: 'Español', de: 'Deutsch',
+  pt: 'Português', it: 'Italiano', nl: 'Nederlands', pl: 'Polski',
+  ru: 'Русский', ja: '日本語', ko: '한국어', zh: '中文',
+  ar: 'العربية', hi: 'हिन्दी', tr: 'Türkçe', sv: 'Svenska',
+  da: 'Dansk', no: 'Norsk', fi: 'Suomi', uk: 'Українська',
+  cs: 'Čeština', ro: 'Română', el: 'Ελληνικά', th: 'ไทย',
+  vi: 'Tiếng Việt', id: 'Bahasa Indonesia',
+};
+
+const els = {
+  size: document.getElementById('size'),
+  opacity: document.getElementById('opacity'),
+  opacityValue: document.getElementById('opacity-value'),
+  position: document.getElementById('position'),
+  visible: document.getElementById('visible'),
+  badge: document.getElementById('preview-badge'),
+  langSelect: document.getElementById('lang-select'),
+};
+
+Object.entries(LANG_LABELS).forEach(([code, label]) => {
+  const opt = document.createElement('option');
+  opt.value = code;
+  opt.textContent = label;
+  els.langSelect.appendChild(opt);
+});
+
+function applyLang(lang) {
+  const t = I18N[lang];
+  document.getElementById('title').textContent = t.title;
+  document.getElementById('label-size').textContent = t.size;
+  document.getElementById('opt-small').textContent = t.sizeSmall;
+  document.getElementById('opt-medium').textContent = t.sizeMedium;
+  document.getElementById('opt-large').textContent = t.sizeLarge;
+  document.getElementById('label-opacity').textContent = t.opacity;
+  document.getElementById('label-position').textContent = t.position;
+  document.getElementById('opt-tr').textContent = t.posTopRight;
+  document.getElementById('opt-tl').textContent = t.posTopLeft;
+  document.getElementById('opt-br').textContent = t.posBotRight;
+  document.getElementById('opt-bl').textContent = t.posBotLeft;
+  document.getElementById('label-visible').textContent = t.visible;
+  document.getElementById('preview-label').textContent = t.preview;
+  els.langSelect.value = lang;
+}
+
+function updatePreview(settings) {
+  const s = SIZE_MAP[settings.size];
+  const p = POS_MAP[settings.position];
+  const bg = `rgba(0,0,0,${settings.opacity / 100})`;
+  Object.assign(els.badge.style, s, p, {
+    background: bg,
+    display: settings.visible ? 'block' : 'none',
+  });
+}
+
+function getSettings() {
+  return {
+    size: els.size.value,
+    opacity: parseInt(els.opacity.value, 10),
+    position: els.position.value,
+    visible: els.visible.checked,
+  };
+}
+
+function save() {
+  const settings = getSettings();
+  els.opacityValue.textContent = settings.opacity + '%';
+  updatePreview(settings);
+  chrome.storage.sync.set({ imgCounterSettings: settings });
+}
+
+chrome.storage.sync.get({ imgCounterSettings: DEFAULTS, imgCounterLang: 'en' }, (data) => {
+  const s = data.imgCounterSettings;
+  els.size.value = s.size;
+  els.opacity.value = s.opacity;
+  els.opacityValue.textContent = s.opacity + '%';
+  els.position.value = s.position;
+  els.visible.checked = s.visible;
+  updatePreview(s);
+  applyLang(data.imgCounterLang);
+});
+
+els.langSelect.addEventListener('change', () => {
+  const lang = els.langSelect.value;
+  applyLang(lang);
+  chrome.storage.sync.set({ imgCounterLang: lang });
+});
+
+els.size.addEventListener('change', save);
+els.opacity.addEventListener('input', save);
+els.position.addEventListener('change', save);
+els.visible.addEventListener('change', save);
+
+README.md
+README.md
+
+# 🖼️ Reddit Image Counter
+
+A Chrome extension that displays an image counter (e.g. **3 / 10**) on Reddit gallery posts, so you always know which image you're viewing out of the total.
+
+![Chrome](https://img.shields.io/badge/Chrome-Extension-green?logo=googlechrome) ![Manifest V3](https://img.shields.io/badge/Manifest-V3-blue)
+
+## Features
+
+- Displays a **"X / Y"** badge on every Reddit image gallery
+- Updates in real time as you navigate between images
+- Popup menu with customizable options:
+  - **Size** of the counter (small, medium, large)
+  - **Opacity** of the background (10% to 100%)
+  - **Position** (top-left, top-right, bottom-left, bottom-right)
+  - **Visibility** toggle (show/hide the counter)
+- Live preview in the popup
+- Preferences saved and synced across devices
+
+## Installation
+
+1. Clone the repo:
+   ```bash
+   git clone https://github.com/your-user/reddit-image-counter.git
+   ```
+
+Open chrome://extensions/ in Chrome
+Enable Developer mode (top right)
+Click Load unpacked
+Select the project folder
+Project Structure
+reddit-image-counter/
+├── manifest.json # Extension config (Manifest V3)
+├── content.js # Script injected on Reddit (reads galleries)
+├── popup.html # Popup menu UI
+├── popup.js # Popup logic (saves preferences)
+└── README.md
+
+## How It Works
+
+Reddit uses nested Shadow DOMs for its galleries:
+
+gallery-carousel
+└─ shadowRoot
+└─ faceplate-carousel
+└─ shadowRoot
+└─ faceplate-pagination-indicator [pages="10" page-index="0"]
+
+The extension traverses these shadow boundaries to read the pages and page-index attributes, then injects the badge directly into the gallery-carousel shadow root.
+
+A 500ms polling interval is used because MutationObserver cannot observe across Shadow DOM boundaries.
+
+
+style.css
+.reddit-img-counter {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 14px;
+  z-index: 10000;
+  pointer-events: none;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  letter-spacing: 0.3px;
+}
+
+.git\COMMIT_EDITMSG
+feat: add popup to manage
+
+
+.git\config
+[core]
+	repositoryformatversion = 0
+	filemode = false
+	bare = false
+	logallrefupdates = true
+	symlinks = false
+	ignorecase = true
+[remote "origin"]
+	url = https://github.com/MrGautier256/Reddit-image-counter.git
+	fetch = +refs/heads/*:refs/remotes/origin/*
+[branch "main"]
+	remote = origin
+	merge = refs/heads/main
+	vscode-merge-base = origin/main
+[lfs]
+	repositoryformatversion = 0
+
+
+.git\description
+Unnamed repository; edit this file 'description' to name the repository.
+
+
+.git\FETCH_HEAD
+3c91212a599d1bd9a21ca503b7128272e707be5d		branch 'main' of https://github.com/MrGautier256/Reddit-image-counter
+
+
+.git\HEAD
+ref: refs/heads/main
+
+
+.git\index
+Erreur de lecture du fichier: 'utf-8' codec can't decode byte 0xad in position 13: invalid start byte
+
+.git\packed-refs
+# pack-refs with: peeled fully-peeled sorted 
+e2b8464ed43a4408a436eaab8420ed92688938ce refs/remotes/origin/main
+
+
+.git\hooks\applypatch-msg.sample
+#!/bin/sh
+#
+# An example hook script to check the commit log message taken by
+# applypatch from an e-mail message.
+#
+# The hook should exit with non-zero status after issuing an
+# appropriate message if it wants to stop the commit.  The hook is
+# allowed to edit the commit message file.
+#
+# To enable this hook, rename this file to "applypatch-msg".
+
+. git-sh-setup
+commitmsg="$(git rev-parse --git-path hooks/commit-msg)"
+test -x "$commitmsg" && exec "$commitmsg" ${1+"$@"}
+:
+
+
+.git\hooks\commit-msg.sample
+#!/bin/sh
+#
+# An example hook script to check the commit log message.
+# Called by "git commit" with one argument, the name of the file
+# that has the commit message.  The hook should exit with non-zero
+# status after issuing an appropriate message if it wants to stop the
+# commit.  The hook is allowed to edit the commit message file.
+#
+# To enable this hook, rename this file to "commit-msg".
+
+# Uncomment the below to add a Signed-off-by line to the message.
+# Doing this in a hook is a bad idea in general, but the prepare-commit-msg
+# hook is more suited to it.
+#
+# SOB=$(git var GIT_AUTHOR_IDENT | sed -n 's/^\(.*>\).*$/Signed-off-by: \1/p')
+# grep -qs "^$SOB" "$1" || echo "$SOB" >> "$1"
+
+# This example catches duplicate Signed-off-by lines.
+
+test "" = "$(grep '^Signed-off-by: ' "$1" |
+	 sort | uniq -c | sed -e '/^[ 	]*1[ 	]/d')" || {
+	echo >&2 Duplicate Signed-off-by lines.
+	exit 1
+}
+
+
+.git\hooks\fsmonitor-watchman.sample
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use IPC::Open2;
+
+# An example hook script to integrate Watchman
+# (https://facebook.github.io/watchman/) with git to speed up detecting
+# new and modified files.
+#
+# The hook is passed a version (currently 2) and last update token
+# formatted as a string and outputs to stdout a new update token and
+# all files that have been modified since the update token. Paths must
+# be relative to the root of the working tree and separated by a single NUL.
+#
+# To enable this hook, rename this file to "query-watchman" and set
+# 'git config core.fsmonitor .git/hooks/query-watchman'
+#
+my ($version, $last_update_token) = @ARGV;
+
+# Uncomment for debugging
+# print STDERR "$0 $version $last_update_token\n";
+
+# Check the hook interface version
+if ($version ne 2) {
+	die "Unsupported query-fsmonitor hook version '$version'.\n" .
+	    "Falling back to scanning...\n";
+}
+
+my $git_work_tree = get_working_dir();
+
+my $retry = 1;
+
+my $json_pkg;
+eval {
+	require JSON::XS;
+	$json_pkg = "JSON::XS";
+	1;
+} or do {
+	require JSON::PP;
+	$json_pkg = "JSON::PP";
+};
+
+launch_watchman();
+
+sub launch_watchman {
+	my $o = watchman_query();
+	if (is_work_tree_watched($o)) {
+		output_result($o->{clock}, @{$o->{files}});
+	}
+}
+
+sub output_result {
+	my ($clockid, @files) = @_;
+
+	# Uncomment for debugging watchman output
+	# open (my $fh, ">", ".git/watchman-output.out");
+	# binmode $fh, ":utf8";
+	# print $fh "$clockid\n@files\n";
+	# close $fh;
+
+	binmode STDOUT, ":utf8";
+	print $clockid;
+	print "\0";
+	local $, = "\0";
+	print @files;
+}
+
+sub watchman_clock {
+	my $response = qx/watchman clock "$git_work_tree"/;
+	die "Failed to get clock id on '$git_work_tree'.\n" .
+		"Falling back to scanning...\n" if $? != 0;
+
+	return $json_pkg->new->utf8->decode($response);
+}
+
+sub watchman_query {
+	my $pid = open2(\*CHLD_OUT, \*CHLD_IN, 'watchman -j --no-pretty')
+	or die "open2() failed: $!\n" .
+	"Falling back to scanning...\n";
+
+	# In the query expression below we're asking for names of files that
+	# changed since $last_update_token but not from the .git folder.
+	#
+	# To accomplish this, we're using the "since" generator to use the
+	# recency index to select candidate nodes and "fields" to limit the
+	# output to file names only. Then we're using the "expression" term to
+	# further constrain the results.
+	my $last_update_line = "";
+	if (substr($last_update_token, 0, 1) eq "c") {
+		$last_update_token = "\"$last_update_token\"";
+		$last_update_line = qq[\n"since": $last_update_token,];
+	}
+	my $query = <<"	END";
+		["query", "$git_work_tree", {$last_update_line
+			"fields": ["name"],
+			"expression": ["not", ["dirname", ".git"]]
+		}]
+	END
+
+	# Uncomment for debugging the watchman query
+	# open (my $fh, ">", ".git/watchman-query.json");
+	# print $fh $query;
+	# close $fh;
+
+	print CHLD_IN $query;
+	close CHLD_IN;
+	my $response = do {local $/; <CHLD_OUT>};
+
+	# Uncomment for debugging the watch response
+	# open ($fh, ">", ".git/watchman-response.json");
+	# print $fh $response;
+	# close $fh;
+
+	die "Watchman: command returned no output.\n" .
+	"Falling back to scanning...\n" if $response eq "";
+	die "Watchman: command returned invalid output: $response\n" .
+	"Falling back to scanning...\n" unless $response =~ /^\{/;
+
+	return $json_pkg->new->utf8->decode($response);
+}
+
+sub is_work_tree_watched {
+	my ($output) = @_;
+	my $error = $output->{error};
+	if ($retry > 0 and $error and $error =~ m/unable to resolve root .* directory (.*) is not watched/) {
+		$retry--;
+		my $response = qx/watchman watch "$git_work_tree"/;
+		die "Failed to make watchman watch '$git_work_tree'.\n" .
+		    "Falling back to scanning...\n" if $? != 0;
+		$output = $json_pkg->new->utf8->decode($response);
+		$error = $output->{error};
+		die "Watchman: $error.\n" .
+		"Falling back to scanning...\n" if $error;
+
+		# Uncomment for debugging watchman output
+		# open (my $fh, ">", ".git/watchman-output.out");
+		# close $fh;
+
+		# Watchman will always return all files on the first query so
+		# return the fast "everything is dirty" flag to git and do the
+		# Watchman query just to get it over with now so we won't pay
+		# the cost in git to look up each individual file.
+		my $o = watchman_clock();
+		$error = $output->{error};
+
+		die "Watchman: $error.\n" .
+		"Falling back to scanning...\n" if $error;
+
+		output_result($o->{clock}, ("/"));
+		$last_update_token = $o->{clock};
+
+		eval { launch_watchman() };
+		return 0;
+	}
+
+	die "Watchman: $error.\n" .
+	"Falling back to scanning...\n" if $error;
+
+	return 1;
+}
+
+sub get_working_dir {
+	my $working_dir;
+	if ($^O =~ 'msys' || $^O =~ 'cygwin') {
+		$working_dir = Win32::GetCwd();
+		$working_dir =~ tr/\\/\//;
+	} else {
+		require Cwd;
+		$working_dir = Cwd::cwd();
+	}
+
+	return $working_dir;
+}
+
+
+.git\hooks\post-update.sample
+#!/bin/sh
+#
+# An example hook script to prepare a packed repository for use over
+# dumb transports.
+#
+# To enable this hook, rename this file to "post-update".
+
+exec git update-server-info
+
+
+.git\hooks\pre-applypatch.sample
+#!/bin/sh
+#
+# An example hook script to verify what is about to be committed
+# by applypatch from an e-mail message.
+#
+# The hook should exit with non-zero status after issuing an
+# appropriate message if it wants to stop the commit.
+#
+# To enable this hook, rename this file to "pre-applypatch".
+
+. git-sh-setup
+precommit="$(git rev-parse --git-path hooks/pre-commit)"
+test -x "$precommit" && exec "$precommit" ${1+"$@"}
+:
+
+
+.git\hooks\pre-commit.sample
+#!/bin/sh
+#
+# An example hook script to verify what is about to be committed.
+# Called by "git commit" with no arguments.  The hook should
+# exit with non-zero status after issuing an appropriate message if
+# it wants to stop the commit.
+#
+# To enable this hook, rename this file to "pre-commit".
+
+if git rev-parse --verify HEAD >/dev/null 2>&1
+then
+	against=HEAD
+else
+	# Initial commit: diff against an empty tree object
+	against=$(git hash-object -t tree /dev/null)
+fi
+
+# If you want to allow non-ASCII filenames set this variable to true.
+allownonascii=$(git config --type=bool hooks.allownonascii)
+
+# Redirect output to stderr.
+exec 1>&2
+
+# Cross platform projects tend to avoid non-ASCII filenames; prevent
+# them from being added to the repository. We exploit the fact that the
+# printable range starts at the space character and ends with tilde.
+if [ "$allownonascii" != "true" ] &&
+	# Note that the use of brackets around a tr range is ok here, (it's
+	# even required, for portability to Solaris 10's /usr/bin/tr), since
+	# the square bracket bytes happen to fall in the designated range.
+	test $(git diff-index --cached --name-only --diff-filter=A -z $against |
+	  LC_ALL=C tr -d '[ -~]\0' | wc -c) != 0
+then
+	cat <<\EOF
+Error: Attempt to add a non-ASCII file name.
+
+This can cause problems if you want to work with people on other platforms.
+
+To be portable it is advisable to rename the file.
+
+If you know what you are doing you can disable this check using:
+
+  git config hooks.allownonascii true
+EOF
+	exit 1
+fi
+
+# If there are whitespace errors, print the offending file names and fail.
+exec git diff-index --check --cached $against --
+
+
+.git\hooks\pre-merge-commit.sample
+#!/bin/sh
+#
+# An example hook script to verify what is about to be committed.
+# Called by "git merge" with no arguments.  The hook should
+# exit with non-zero status after issuing an appropriate message to
+# stderr if it wants to stop the merge commit.
+#
+# To enable this hook, rename this file to "pre-merge-commit".
+
+. git-sh-setup
+test -x "$GIT_DIR/hooks/pre-commit" &&
+        exec "$GIT_DIR/hooks/pre-commit"
+:
+
+
+.git\hooks\pre-push.sample
+#!/bin/sh
+
+# An example hook script to verify what is about to be pushed.  Called by "git
+# push" after it has checked the remote status, but before anything has been
+# pushed.  If this script exits with a non-zero status nothing will be pushed.
+#
+# This hook is called with the following parameters:
+#
+# $1 -- Name of the remote to which the push is being done
+# $2 -- URL to which the push is being done
+#
+# If pushing without using a named remote those arguments will be equal.
+#
+# Information about the commits which are being pushed is supplied as lines to
+# the standard input in the form:
+#
+#   <local ref> <local oid> <remote ref> <remote oid>
+#
+# This sample shows how to prevent push of commits where the log message starts
+# with "WIP" (work in progress).
+
+remote="$1"
+url="$2"
+
+zero=$(git hash-object --stdin </dev/null | tr '[0-9a-f]' '0')
+
+while read local_ref local_oid remote_ref remote_oid
+do
+	if test "$local_oid" = "$zero"
+	then
+		# Handle delete
+		:
+	else
+		if test "$remote_oid" = "$zero"
+		then
+			# New branch, examine all commits
+			range="$local_oid"
+		else
+			# Update to existing branch, examine new commits
+			range="$remote_oid..$local_oid"
+		fi
+
+		# Check for WIP commit
+		commit=$(git rev-list -n 1 --grep '^WIP' "$range")
+		if test -n "$commit"
+		then
+			echo >&2 "Found WIP commit in $local_ref, not pushing"
+			exit 1
+		fi
+	fi
+done
+
+exit 0
+
+
+.git\hooks\pre-rebase.sample
+#!/bin/sh
+#
+# Copyright (c) 2006, 2008 Junio C Hamano
+#
+# The "pre-rebase" hook is run just before "git rebase" starts doing
+# its job, and can prevent the command from running by exiting with
+# non-zero status.
+#
+# The hook is called with the following parameters:
+#
+# $1 -- the upstream the series was forked from.
+# $2 -- the branch being rebased (or empty when rebasing the current branch).
+#
+# This sample shows how to prevent topic branches that are already
+# merged to 'next' branch from getting rebased, because allowing it
+# would result in rebasing already published history.
+
+publish=next
+basebranch="$1"
+if test "$#" = 2
+then
+	topic="refs/heads/$2"
+else
+	topic=`git symbolic-ref HEAD` ||
+	exit 0 ;# we do not interrupt rebasing detached HEAD
+fi
+
+case "$topic" in
+refs/heads/??/*)
+	;;
+*)
+	exit 0 ;# we do not interrupt others.
+	;;
+esac
+
+# Now we are dealing with a topic branch being rebased
+# on top of master.  Is it OK to rebase it?
+
+# Does the topic really exist?
+git show-ref -q "$topic" || {
+	echo >&2 "No such branch $topic"
+	exit 1
+}
+
+# Is topic fully merged to master?
+not_in_master=`git rev-list --pretty=oneline ^master "$topic"`
+if test -z "$not_in_master"
+then
+	echo >&2 "$topic is fully merged to master; better remove it."
+	exit 1 ;# we could allow it, but there is no point.
+fi
+
+# Is topic ever merged to next?  If so you should not be rebasing it.
+only_next_1=`git rev-list ^master "^$topic" ${publish} | sort`
+only_next_2=`git rev-list ^master           ${publish} | sort`
+if test "$only_next_1" = "$only_next_2"
+then
+	not_in_topic=`git rev-list "^$topic" master`
+	if test -z "$not_in_topic"
+	then
+		echo >&2 "$topic is already up to date with master"
+		exit 1 ;# we could allow it, but there is no point.
+	else
+		exit 0
+	fi
+else
+	not_in_next=`git rev-list --pretty=oneline ^${publish} "$topic"`
+	/usr/bin/perl -e '
+		my $topic = $ARGV[0];
+		my $msg = "* $topic has commits already merged to public branch:\n";
+		my (%not_in_next) = map {
+			/^([0-9a-f]+) /;
+			($1 => 1);
+		} split(/\n/, $ARGV[1]);
+		for my $elem (map {
+				/^([0-9a-f]+) (.*)$/;
+				[$1 => $2];
+			} split(/\n/, $ARGV[2])) {
+			if (!exists $not_in_next{$elem->[0]}) {
+				if ($msg) {
+					print STDERR $msg;
+					undef $msg;
+				}
+				print STDERR " $elem->[1]\n";
+			}
+		}
+	' "$topic" "$not_in_next" "$not_in_master"
+	exit 1
+fi
+
+<<\DOC_END
+
+This sample hook safeguards topic branches that have been
+published from being rewound.
+
+The workflow assumed here is:
+
+ * Once a topic branch forks from "master", "master" is never
+   merged into it again (either directly or indirectly).
+
+ * Once a topic branch is fully cooked and merged into "master",
+   it is deleted.  If you need to build on top of it to correct
+   earlier mistakes, a new topic branch is created by forking at
+   the tip of the "master".  This is not strictly necessary, but
+   it makes it easier to keep your history simple.
+
+ * Whenever you need to test or publish your changes to topic
+   branches, merge them into "next" branch.
+
+The script, being an example, hardcodes the publish branch name
+to be "next", but it is trivial to make it configurable via
+$GIT_DIR/config mechanism.
+
+With this workflow, you would want to know:
+
+(1) ... if a topic branch has ever been merged to "next".  Young
+    topic branches can have stupid mistakes you would rather
+    clean up before publishing, and things that have not been
+    merged into other branches can be easily rebased without
+    affecting other people.  But once it is published, you would
+    not want to rewind it.
+
+(2) ... if a topic branch has been fully merged to "master".
+    Then you can delete it.  More importantly, you should not
+    build on top of it -- other people may already want to
+    change things related to the topic as patches against your
+    "master", so if you need further changes, it is better to
+    fork the topic (perhaps with the same name) afresh from the
+    tip of "master".
+
+Let's look at this example:
+
+		   o---o---o---o---o---o---o---o---o---o "next"
+		  /       /           /           /
+		 /   a---a---b A     /           /
+		/   /               /           /
+	       /   /   c---c---c---c B         /
+	      /   /   /             \         /
+	     /   /   /   b---b C     \       /
+	    /   /   /   /             \     /
+    ---o---o---o---o---o---o---o---o---o---o---o "master"
+
+
+A, B and C are topic branches.
+
+ * A has one fix since it was merged up to "next".
+
+ * B has finished.  It has been fully merged up to "master" and "next",
+   and is ready to be deleted.
+
+ * C has not merged to "next" at all.
+
+We would want to allow C to be rebased, refuse A, and encourage
+B to be deleted.
+
+To compute (1):
+
+	git rev-list ^master ^topic next
+	git rev-list ^master        next
+
+	if these match, topic has not merged in next at all.
+
+To compute (2):
+
+	git rev-list master..topic
+
+	if this is empty, it is fully merged to "master".
+
+DOC_END
+
+
+.git\hooks\pre-receive.sample
+#!/bin/sh
+#
+# An example hook script to make use of push options.
+# The example simply echoes all push options that start with 'echoback='
+# and rejects all pushes when the "reject" push option is used.
+#
+# To enable this hook, rename this file to "pre-receive".
+
+if test -n "$GIT_PUSH_OPTION_COUNT"
+then
+	i=0
+	while test "$i" -lt "$GIT_PUSH_OPTION_COUNT"
+	do
+		eval "value=\$GIT_PUSH_OPTION_$i"
+		case "$value" in
+		echoback=*)
+			echo "echo from the pre-receive-hook: ${value#*=}" >&2
+			;;
+		reject)
+			exit 1
+		esac
+		i=$((i + 1))
+	done
+fi
+
+
+.git\hooks\prepare-commit-msg.sample
+#!/bin/sh
+#
+# An example hook script to prepare the commit log message.
+# Called by "git commit" with the name of the file that has the
+# commit message, followed by the description of the commit
+# message's source.  The hook's purpose is to edit the commit
+# message file.  If the hook fails with a non-zero status,
+# the commit is aborted.
+#
+# To enable this hook, rename this file to "prepare-commit-msg".
+
+# This hook includes three examples. The first one removes the
+# "# Please enter the commit message..." help message.
+#
+# The second includes the output of "git diff --name-status -r"
+# into the message, just before the "git status" output.  It is
+# commented because it doesn't cope with --amend or with squashed
+# commits.
+#
+# The third example adds a Signed-off-by line to the message, that can
+# still be edited.  This is rarely a good idea.
+
+COMMIT_MSG_FILE=$1
+COMMIT_SOURCE=$2
+SHA1=$3
+
+/usr/bin/perl -i.bak -ne 'print unless(m/^. Please enter the commit message/..m/^#$/)' "$COMMIT_MSG_FILE"
+
+# case "$COMMIT_SOURCE,$SHA1" in
+#  ,|template,)
+#    /usr/bin/perl -i.bak -pe '
+#       print "\n" . `git diff --cached --name-status -r`
+# 	 if /^#/ && $first++ == 0' "$COMMIT_MSG_FILE" ;;
+#  *) ;;
+# esac
+
+# SOB=$(git var GIT_COMMITTER_IDENT | sed -n 's/^\(.*>\).*$/Signed-off-by: \1/p')
+# git interpret-trailers --in-place --trailer "$SOB" "$COMMIT_MSG_FILE"
+# if test -z "$COMMIT_SOURCE"
+# then
+#   /usr/bin/perl -i.bak -pe 'print "\n" if !$first_line++' "$COMMIT_MSG_FILE"
+# fi
+
+
+.git\hooks\push-to-checkout.sample
+#!/bin/sh
+
+# An example hook script to update a checked-out tree on a git push.
+#
+# This hook is invoked by git-receive-pack(1) when it reacts to git
+# push and updates reference(s) in its repository, and when the push
+# tries to update the branch that is currently checked out and the
+# receive.denyCurrentBranch configuration variable is set to
+# updateInstead.
+#
+# By default, such a push is refused if the working tree and the index
+# of the remote repository has any difference from the currently
+# checked out commit; when both the working tree and the index match
+# the current commit, they are updated to match the newly pushed tip
+# of the branch. This hook is to be used to override the default
+# behaviour; however the code below reimplements the default behaviour
+# as a starting point for convenient modification.
+#
+# The hook receives the commit with which the tip of the current
+# branch is going to be updated:
+commit=$1
+
+# It can exit with a non-zero status to refuse the push (when it does
+# so, it must not modify the index or the working tree).
+die () {
+	echo >&2 "$*"
+	exit 1
+}
+
+# Or it can make any necessary changes to the working tree and to the
+# index to bring them to the desired state when the tip of the current
+# branch is updated to the new commit, and exit with a zero status.
+#
+# For example, the hook can simply run git read-tree -u -m HEAD "$1"
+# in order to emulate git fetch that is run in the reverse direction
+# with git push, as the two-tree form of git read-tree -u -m is
+# essentially the same as git switch or git checkout that switches
+# branches while keeping the local changes in the working tree that do
+# not interfere with the difference between the branches.
+
+# The below is a more-or-less exact translation to shell of the C code
+# for the default behaviour for git's push-to-checkout hook defined in
+# the push_to_deploy() function in builtin/receive-pack.c.
+#
+# Note that the hook will be executed from the repository directory,
+# not from the working tree, so if you want to perform operations on
+# the working tree, you will have to adapt your code accordingly, e.g.
+# by adding "cd .." or using relative paths.
+
+if ! git update-index -q --ignore-submodules --refresh
+then
+	die "Up-to-date check failed"
+fi
+
+if ! git diff-files --quiet --ignore-submodules --
+then
+	die "Working directory has unstaged changes"
+fi
+
+# This is a rough translation of:
+#
+#   head_has_history() ? "HEAD" : EMPTY_TREE_SHA1_HEX
+if git cat-file -e HEAD 2>/dev/null
+then
+	head=HEAD
+else
+	head=$(git hash-object -t tree --stdin </dev/null)
+fi
+
+if ! git diff-index --quiet --cached --ignore-submodules $head --
+then
+	die "Working directory has staged changes"
+fi
+
+if ! git read-tree -u -m "$commit"
+then
+	die "Could not update working tree to new HEAD"
+fi
+
+
+.git\hooks\sendemail-validate.sample
+#!/bin/sh
+
+# An example hook script to validate a patch (and/or patch series) before
+# sending it via email.
+#
+# The hook should exit with non-zero status after issuing an appropriate
+# message if it wants to prevent the email(s) from being sent.
+#
+# To enable this hook, rename this file to "sendemail-validate".
+#
+# By default, it will only check that the patch(es) can be applied on top of
+# the default upstream branch without conflicts in a secondary worktree. After
+# validation (successful or not) of the last patch of a series, the worktree
+# will be deleted.
+#
+# The following config variables can be set to change the default remote and
+# remote ref that are used to apply the patches against:
+#
+#   sendemail.validateRemote (default: origin)
+#   sendemail.validateRemoteRef (default: HEAD)
+#
+# Replace the TODO placeholders with appropriate checks according to your
+# needs.
+
+validate_cover_letter () {
+	file="$1"
+	# TODO: Replace with appropriate checks (e.g. spell checking).
+	true
+}
+
+validate_patch () {
+	file="$1"
+	# Ensure that the patch applies without conflicts.
+	git am -3 "$file" || return
+	# TODO: Replace with appropriate checks for this patch
+	# (e.g. checkpatch.pl).
+	true
+}
+
+validate_series () {
+	# TODO: Replace with appropriate checks for the whole series
+	# (e.g. quick build, coding style checks, etc.).
+	true
+}
+
+# main -------------------------------------------------------------------------
+
+if test "$GIT_SENDEMAIL_FILE_COUNTER" = 1
+then
+	remote=$(git config --default origin --get sendemail.validateRemote) &&
+	ref=$(git config --default HEAD --get sendemail.validateRemoteRef) &&
+	worktree=$(mktemp --tmpdir -d sendemail-validate.XXXXXXX) &&
+	git worktree add -fd --checkout "$worktree" "refs/remotes/$remote/$ref" &&
+	git config --replace-all sendemail.validateWorktree "$worktree"
+else
+	worktree=$(git config --get sendemail.validateWorktree)
+fi || {
+	echo "sendemail-validate: error: failed to prepare worktree" >&2
+	exit 1
+}
+
+unset GIT_DIR GIT_WORK_TREE
+cd "$worktree" &&
+
+if grep -q "^diff --git " "$1"
+then
+	validate_patch "$1"
+else
+	validate_cover_letter "$1"
+fi &&
+
+if test "$GIT_SENDEMAIL_FILE_COUNTER" = "$GIT_SENDEMAIL_FILE_TOTAL"
+then
+	git config --unset-all sendemail.validateWorktree &&
+	trap 'git worktree remove -ff "$worktree"' EXIT &&
+	validate_series
+fi
+
+
+.git\hooks\update.sample
+#!/bin/sh
+#
+# An example hook script to block unannotated tags from entering.
+# Called by "git receive-pack" with arguments: refname sha1-old sha1-new
+#
+# To enable this hook, rename this file to "update".
+#
+# Config
+# ------
+# hooks.allowunannotated
+#   This boolean sets whether unannotated tags will be allowed into the
+#   repository.  By default they won't be.
+# hooks.allowdeletetag
+#   This boolean sets whether deleting tags will be allowed in the
+#   repository.  By default they won't be.
+# hooks.allowmodifytag
+#   This boolean sets whether a tag may be modified after creation. By default
+#   it won't be.
+# hooks.allowdeletebranch
+#   This boolean sets whether deleting branches will be allowed in the
+#   repository.  By default they won't be.
+# hooks.denycreatebranch
+#   This boolean sets whether remotely creating branches will be denied
+#   in the repository.  By default this is allowed.
+#
+
+# --- Command line
+refname="$1"
+oldrev="$2"
+newrev="$3"
+
+# --- Safety check
+if [ -z "$GIT_DIR" ]; then
+	echo "Don't run this script from the command line." >&2
+	echo " (if you want, you could supply GIT_DIR then run" >&2
+	echo "  $0 <ref> <oldrev> <newrev>)" >&2
+	exit 1
+fi
+
+if [ -z "$refname" -o -z "$oldrev" -o -z "$newrev" ]; then
+	echo "usage: $0 <ref> <oldrev> <newrev>" >&2
+	exit 1
+fi
+
+# --- Config
+allowunannotated=$(git config --type=bool hooks.allowunannotated)
+allowdeletebranch=$(git config --type=bool hooks.allowdeletebranch)
+denycreatebranch=$(git config --type=bool hooks.denycreatebranch)
+allowdeletetag=$(git config --type=bool hooks.allowdeletetag)
+allowmodifytag=$(git config --type=bool hooks.allowmodifytag)
+
+# check for no description
+projectdesc=$(sed -e '1q' "$GIT_DIR/description")
+case "$projectdesc" in
+"Unnamed repository"* | "")
+	echo "*** Project description file hasn't been set" >&2
+	exit 1
+	;;
+esac
+
+# --- Check types
+# if $newrev is 0000...0000, it's a commit to delete a ref.
+zero=$(git hash-object --stdin </dev/null | tr '[0-9a-f]' '0')
+if [ "$newrev" = "$zero" ]; then
+	newrev_type=delete
+else
+	newrev_type=$(git cat-file -t $newrev)
+fi
+
+case "$refname","$newrev_type" in
+	refs/tags/*,commit)
+		# un-annotated tag
+		short_refname=${refname##refs/tags/}
+		if [ "$allowunannotated" != "true" ]; then
+			echo "*** The un-annotated tag, $short_refname, is not allowed in this repository" >&2
+			echo "*** Use 'git tag [ -a | -s ]' for tags you want to propagate." >&2
+			exit 1
+		fi
+		;;
+	refs/tags/*,delete)
+		# delete tag
+		if [ "$allowdeletetag" != "true" ]; then
+			echo "*** Deleting a tag is not allowed in this repository" >&2
+			exit 1
+		fi
+		;;
+	refs/tags/*,tag)
+		# annotated tag
+		if [ "$allowmodifytag" != "true" ] && git rev-parse $refname > /dev/null 2>&1
+		then
+			echo "*** Tag '$refname' already exists." >&2
+			echo "*** Modifying a tag is not allowed in this repository." >&2
+			exit 1
+		fi
+		;;
+	refs/heads/*,commit)
+		# branch
+		if [ "$oldrev" = "$zero" -a "$denycreatebranch" = "true" ]; then
+			echo "*** Creating a branch is not allowed in this repository" >&2
+			exit 1
+		fi
+		;;
+	refs/heads/*,delete)
+		# delete branch
+		if [ "$allowdeletebranch" != "true" ]; then
+			echo "*** Deleting a branch is not allowed in this repository" >&2
+			exit 1
+		fi
+		;;
+	refs/remotes/*,commit)
+		# tracking branch
+		;;
+	refs/remotes/*,delete)
+		# delete tracking branch
+		if [ "$allowdeletebranch" != "true" ]; then
+			echo "*** Deleting a tracking branch is not allowed in this repository" >&2
+			exit 1
+		fi
+		;;
+	*)
+		# Anything else (is there anything else?)
+		echo "*** Update hook: unknown type of update to ref $refname of type $newrev_type" >&2
+		exit 1
+		;;
+esac
+
+# --- Finished
+exit 0
+
+
+.git\info\exclude
+# git ls-files --others --exclude-from=.git/info/exclude
+# Lines that start with '#' are comments.
+# For a project mostly in C, the following would be a good set of
+# exclude patterns (uncomment them if you want to use them):
+# *.[oa]
+# *~
+
+
+.git\logs\HEAD
+0000000000000000000000000000000000000000 e2b8464ed43a4408a436eaab8420ed92688938ce Gautier <g.mekhelian@gmail.com> 1772972112 +0100	clone: from https://github.com/MrGautier256/Reddit-image-counter.git
+e2b8464ed43a4408a436eaab8420ed92688938ce 3c91212a599d1bd9a21ca503b7128272e707be5d Gautier <g.mekhelian@gmail.com> 1772972349 +0100	commit: feat: add popup to manage
+
+
+.git\logs\refs\heads\main
+0000000000000000000000000000000000000000 e2b8464ed43a4408a436eaab8420ed92688938ce Gautier <g.mekhelian@gmail.com> 1772972112 +0100	clone: from https://github.com/MrGautier256/Reddit-image-counter.git
+e2b8464ed43a4408a436eaab8420ed92688938ce 3c91212a599d1bd9a21ca503b7128272e707be5d Gautier <g.mekhelian@gmail.com> 1772972349 +0100	commit: feat: add popup to manage
+
+
+.git\logs\refs\remotes\origin\HEAD
+0000000000000000000000000000000000000000 e2b8464ed43a4408a436eaab8420ed92688938ce Gautier <g.mekhelian@gmail.com> 1772972112 +0100	clone: from https://github.com/MrGautier256/Reddit-image-counter.git
+3c91212a599d1bd9a21ca503b7128272e707be5d 3c91212a599d1bd9a21ca503b7128272e707be5d Gautier Mekhelian <gauti@PC-Gautier.(none)> 1772972353 +0100	remote set-head
+
+
+.git\logs\refs\remotes\origin\main
+e2b8464ed43a4408a436eaab8420ed92688938ce 3c91212a599d1bd9a21ca503b7128272e707be5d Gautier <g.mekhelian@gmail.com> 1772972352 +0100	update by push
+
+
+.git\objects\25\40d40046cbbfc69baf3bd861dd35491b8a2c1b
+Erreur de lecture du fichier: 'utf-8' codec can't decode byte 0xfb in position 5: invalid start byte
+
+.git\objects\2d\32880dabea3c50817d4ed487c40aa7ed75dcce
+Erreur de lecture du fichier: 'utf-8' codec can't decode byte 0x99 in position 5: invalid start byte
+
+.git\objects\3c\91212a599d1bd9a21ca503b7128272e707be5d
+Erreur de lecture du fichier: 'utf-8' codec can't decode byte 0x95 in position 2: invalid start byte
+
+.git\objects\40\5132177f0cf4966932da42b8f0887fb8914706
+Erreur de lecture du fichier: 'utf-8' codec can't decode byte 0xad in position 2: invalid start byte
+
+.git\objects\43\73e0669eef1bda5aad06c6e9c9295a8ccf16c6
+Erreur de lecture du fichier: 'utf-8' codec can't decode byte 0x8d in position 3: invalid start byte
+
+.git\objects\50\ff2c3217ccf0bb2e07580642898bb20c7bc8b3
+Erreur de lecture du fichier: 'utf-8' codec can't decode byte 0xd0 in position 18: invalid continuation byte
+
+.git\objects\88\540568a66ee3fb55ccb3e36a64c6e56fd00202
+Erreur de lecture du fichier: 'utf-8' codec can't decode byte 0xc8 in position 18: invalid continuation byte
+
+.git\objects\8c\8d084f4c5d1c893ec27f6dda876c44266bdf0d
+Erreur de lecture du fichier: 'utf-8' codec can't decode byte 0xee in position 3: invalid continuation byte
+
+.git\objects\90\373ca92edf7e00da5d34183a63da392472e8dc
+Erreur de lecture du fichier: 'utf-8' codec can't decode byte 0x85 in position 2: invalid start byte
+
+.git\objects\d7\283ade8b321c3beb9ea22dcd230556b9f61c0d
+Erreur de lecture du fichier: 'utf-8' codec can't decode byte 0x8d in position 2: invalid start byte
+
+.git\objects\de\2b78c26ef679e334c7b0404fbd117ff5abced6
+Erreur de lecture du fichier: 'utf-8' codec can't decode byte 0x95 in position 2: invalid start byte
+
+.git\objects\e3\0442803c6242d5ca7fa8fe048b2b314d12fe6b
+Erreur de lecture du fichier: 'utf-8' codec can't decode byte 0x90 in position 5: invalid start byte
+
+.git\objects\f6\7430a58107b81f2ac11e20c719316275865079
+Erreur de lecture du fichier: 'utf-8' codec can't decode byte 0xcb in position 4: invalid continuation byte
+
+.git\objects\ff\30dcd54c64bbacb0a94eb606908f8a69184f06
+Erreur de lecture du fichier: 'utf-8' codec can't decode byte 0xf5 in position 9: invalid start byte
+
+.git\objects\pack\pack-e7630aeaf0b06a358f5d3c0fd8d703339cbbe566.idx
+Erreur de lecture du fichier: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+
+.git\objects\pack\pack-e7630aeaf0b06a358f5d3c0fd8d703339cbbe566.pack
+Erreur de lecture du fichier: 'utf-8' codec can't decode byte 0x90 in position 12: invalid start byte
+
+.git\objects\pack\pack-e7630aeaf0b06a358f5d3c0fd8d703339cbbe566.rev
+Erreur de lecture du fichier: 'utf-8' codec can't decode byte 0xe7 in position 28: invalid continuation byte
+
+.git\refs\heads\main
+3c91212a599d1bd9a21ca503b7128272e707be5d
+
+
+.git\refs\remotes\origin\HEAD
+ref: refs/remotes/origin/main
+
+
+.git\refs\remotes\origin\main
+3c91212a599d1bd9a21ca503b7128272e707be5d
+
+
