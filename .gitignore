@@ -1,0 +1,23 @@
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editors / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Node (if used later)
+node_modules/
+package-lock.json
+
+# Build / packaging
+*.zip
+*.crx
+*.pem
+
+# Logs
+*.log

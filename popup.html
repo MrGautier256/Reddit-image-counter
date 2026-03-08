@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      width: 280px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #1a1a1b;
+      color: #d7dadc;
+      padding: 16px;
+    }
+
+    h2 {
+      font-size: 15px;
+      margin-bottom: 14px;
+      color: #ff4500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .setting {
+      margin-bottom: 14px;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      color: #818384;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    select,
+    input[type="range"] {
+      width: 100%;
+      background: #272729;
+      color: #d7dadc;
+      border: 1px solid #343536;
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 13px;
+      outline: none;
+    }
+
+    select:hover,
+    input[type="range"]:hover {
+      border-color: #ff4500;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      height: 6px;
+      padding: 0;
+      border: none;
+      border-radius: 3px;
+      background: #343536;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #ff4500;
+      cursor: pointer;
+    }
+
+    .range-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .range-value {
+      font-size: 13px;
+      font-weight: 600;
+      min-width: 36px;
+      text-align: right;
+      color: #ff4500;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #272729;
+      border: 1px solid #343536;
+      border-radius: 6px;
+      padding: 8px 10px;
+    }
+
+    .toggle-row span {
+      font-size: 13px;
+    }
+
+    .switch {
+      position: relative;
+      width: 40px;
+      height: 22px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      inset: 0;
+      background: #343536;
+      border-radius: 22px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .slider::before {
+      content: "";
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      left: 3px;
+      bottom: 3px;
+      background: #d7dadc;
+      border-radius: 50%;
+      transition: 0.2s;
+    }
+
+    .switch input:checked+.slider {
+      background: #ff4500;
+    }
+
+    .switch input:checked+.slider::before {
+      transform: translateX(18px);
+    }
+
+    .preview {
+      margin-top: 14px;
+      background: #272729;
+      border-radius: 8px;
+      height: 80px;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid #343536;
+    }
+
+    .preview-badge {
+      position: absolute;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      font-weight: 700;
+      border-radius: 14px;
+      white-space: nowrap;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      transition: all 0.2s;
+    }
+
+    .preview-label {
+      position: absolute;
+      bottom: 4px;
+      right: 6px;
+      font-size: 10px;
+      color: #818384;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>🖼️ Reddit Image Counter</h2>
+
+  <div class="setting">
+    <label>Taille</label>
+    <select id="size">
+      <option value="small">Petit</option>
+      <option value="medium" selected>Moyen</option>
+      <option value="large">Grand</option>
+    </select>
+  </div>
+
+  <div class="setting">
+    <label>Opacité</label>
+    <div class="range-row">
+      <input type="range" id="opacity" min="10" max="100" value="75" step="5">
+      <span class="range-value" id="opacity-value">75%</span>
+    </div>
+  </div>
+
+  <div class="setting">
+    <label>Emplacement</label>
+    <select id="position">
+      <option value="top-right" selected>↗ Haut droite</option>
+      <option value="top-left">↖ Haut gauche</option>
+      <option value="bottom-right">↘ Bas droite</option>
+      <option value="bottom-left">↙ Bas gauche</option>
+    </select>
+  </div>
+
+  <div class="setting">
+    <div class="toggle-row">
+      <span>Compteur visible</span>
+      <label class="switch">
+        <input type="checkbox" id="visible" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+  </div>
+
+  <div class="preview">
+    <div class="preview-badge" id="preview-badge">3 / 10</div>
+    <span class="preview-label">aperçu</span>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+
+</html>
